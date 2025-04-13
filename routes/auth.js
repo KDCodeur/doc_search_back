@@ -12,9 +12,9 @@ const SECRET_KEY = 'votre_clé_secrète_super_sécurisée';
 
 // 🔐 Inscription
 router.post('/register', async (req, res) => {
-  const { email, name, password } = req.body;
+  const { email, name, password, role } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-  users.push({ email, name, password: hashedPassword });
+  users.push({ email, name, role, password: hashedPassword });
   res.status(201).json({ message: 'Utilisateur inscrit' });
 });
 
@@ -27,7 +27,7 @@ router.post('/login', async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(401).json({ message: 'Mot de passe incorrect' });
 
-  const token = jwt.sign({ email: user.email }, SECRET_KEY, { expiresIn: '1h' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET_KEY, { expiresIn: '1h' });
   res.json({ token });
 });
 

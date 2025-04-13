@@ -1,16 +1,19 @@
 const { error } = require('console');
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../auth/middlewere');
+const { authorizeRoles } = require('../auth/role');
+
 
 let docs = []; // stock en mémoire
 let idCounter = 1;
 
 // CREATE
-router.post('/', (req, res) => {
+router.post('/', verifyToken, authorizeRoles('admin'), (req, res) => {
   const { name, content, type } = req.body;
-  const newUser = { id: idCounter++, content, type };
-  docs.push(newUser);
-  res.status(201).json(newUser);
+  const docs = { id: idCounter++, content, type, name };
+  // docs.push(docs);
+  res.status(201).json(docs);
 });
 
 // READ ALL
