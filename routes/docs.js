@@ -1,8 +1,8 @@
 const { error } = require('console');
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../auth/middlewere');
-const { authorizeRoles } = require('../auth/role');
+const { verifyToken } = require('../middlewares/auth');
+const { authorizeRoles } = require('../middlewares/role');
 
 
 let docs = []; // stock en mémoire
