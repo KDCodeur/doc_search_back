@@ -1,5 +1,5 @@
 const elasticClient = require('../config/elasticsearch');
-const textExtractor = require('./TextExtractor');
+const TextExtractor = require('./TextExtractor');
 
 class ElasticsearchService {
   constructor() {
@@ -8,7 +8,7 @@ class ElasticsearchService {
 
   async indexDocument(file) {
     try {
-      const content = await textExtractor.extractText(file);
+      const content = await TextExtractor.extractText(file);
       
       const document = {
         filename: file.originalname,
@@ -23,6 +23,7 @@ class ElasticsearchService {
         body: document
       });
 
+      // return document;
       return response;
     } catch (error) {
       throw error;

@@ -29,4 +29,12 @@ model User {
   email    String @unique
   role     String
   password String
+  docs     Doc[]
+}
+model Doc {
+  id            Int    @id @default(autoincrement())
+  name          String @unique
+  extension     String
+  publisher     User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId        Int
 }

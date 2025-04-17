@@ -1,12 +1,13 @@
 const pdf = require('pdf-parse');
 const docx = require('docx');
-const { extract } = require('txt-extract');
+// const { extract } = require('txt-extract');
+const mammoth = require('mammoth');
 
 class TextExtractor {
   async extractText(file) {
     const { originalname, buffer } = file;
     const extension = originalname.split('.').pop().toLowerCase();
-
+    
     try {
       switch (extension) {
         case 'pdf':
@@ -14,11 +15,12 @@ class TextExtractor {
           return pdfData.text;
         case 'docx':
           // Note: Cette implémentation est basique, vous pourriez avoir besoin d'une meilleure librairie pour docx
-          const docxText = await this.extractFromDocx(buffer);
-          return docxText;
+          // const docxText = await this.extractFromDocx(buffer);
+
+          const result = await mammoth.extractRawText({ buffer });
+          return result.value;
         case 'txt':
-          const txtText = await extract(buffer.toString());
-          return txtText;
+          return buffer.toString('utf-8');
         default:
           throw new Error('Format de fichier non supporté');
       }
@@ -27,10 +29,10 @@ class TextExtractor {
     }
   }
 
-  async extractFromDocx(buffer) {
-    // Implémentation basique pour docx - vous pourriez utiliser une meilleure librairie
-    return "Contenu DOCX extrait (implémentation à améliorer)";
-  }
+  // async extractFromDocx(buffer) {
+  //   // Implémentation basique pour docx - vous pourriez utiliser une meilleure librairie
+  //   return "Contenu DOCX extrait (implémentation à améliorer)";
+  // }
 }
 
 module.exports = new TextExtractor();
