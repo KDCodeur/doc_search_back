@@ -14,8 +14,6 @@ const path = require('path');
 const upload = multer();
 const prisma = new PrismaClient();
 
-let docs = []; // stock en mémoire
-
 // READ ALL
 router.get('/', async(req, res) => {
   const docs = await prisma.doc.findMany();
@@ -25,26 +23,35 @@ router.get('/', async(req, res) => {
 // UPLOAD
 // router.post('/', verifyToken, authorizeRoles('admin'), (req, res) => {
 router.post('/', verifyToken, upload.single('document'), async (req, res) => {
-  
+  const { file } = req
+  const type = req.body.type
   try {
-    if (!req.file) {
+    if (!file) {
       return res.status(400).json({ error: 'Aucun fichier uploadé' });
     }
 
-    const name = Date.now().toString();
-    const extension = req.file.originalname.split('.').pop().toLowerCase();
-    fs.writeFileSync(`uploads/${name +"."+ extension}`, req.file.buffer);
+    const date = Date.now()
+    const storeId = Date.now().toString();
+    const extension = file.originalname.split('.').pop().toLowerCase();
+    fs.writeFileSync(`uploads/${storeId +"."+ extension}`, file.buffer);
 
     const doc = await prisma.doc.create({
-      data: { name: name, extension, userId: req.user.id },
+      data: { name: file.originalname, 
+        storeId, 
+        extension, 
+        userId: req.user.id, 
+        type: type,  
+        createAt: new Date(), 
+        updateAt: new Date(),
+      },
     });
 
-    const result = await ElasticsearchService.indexDocument(req.file);
+    const result = await ElasticsearchService.indexDocument(file, {storeId: doc.id, type, extension});
     
     res.status(201).json({
       message: 'Document indexé avec succès',
       // documentId: result.content
-      documentId: result.body._id
+      // documentId: result.body._id
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -56,7 +63,7 @@ router.get('/download/:id', async(req, res) => {
   const doc = await prisma.doc.findUnique({
     where: { id: parseInt(req.params.id) },
   });
-    const filePath = path.join(__dirname, '../uploads', doc.name + "." + doc.extension);
+    const filePath = path.join(__dirname, '../uploads', doc.storeId + "." + doc.extension);
     // res.json({name: doc.name, extension: doc.extension})
     res.download(filePath, err => {
         if (err) {
@@ -68,37 +75,17 @@ router.get('/download/:id', async(req, res) => {
 // SEARCH
 router.get('/search', async(req, res) => {
   try {
-    const { query } = req.body;
-    if (!query) {
+    const { keyword, type, format } = req.body;
+    if (!keyword) {
       return res.status(400).json({ error: 'Le paramètre de recherche est requis' });
     }
 
-    const results = await ElasticsearchService.searchDocuments(query);
-    res.status(200).json(results);
+    const results = await ElasticsearchService.searchDocuments({keyword, type, format});
+    res.status(200).json({results, keyword});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
-// READ ONE
-// router.get('/:id', (req, res) => {
-//   const doc = docs.find(u => u.id == req.params.id);
-//   if (doc) res.json(doc);
-//   else res.status(404).json({ message: 'Document non trouvé' });
-// });
-
-// UPDATE
-// router.put('/:id', (req, res) => {
-//   const doc = docs.find(u => u.id == req.params.id);
-//   if (doc) {
-//     doc.name = req.body.name || doc.name;
-//     doc.email = req.body.content || doc.content;
-//     doc.email = req.body.type || doc.type;
-//     res.json(doc);
-//   } else {
-//     res.status(404).json({ message: 'Document non trouvé' });
-//   }
-// });
 
 // DELETE
 router.delete('/:id', async(req, res) => {

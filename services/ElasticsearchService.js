@@ -6,7 +6,7 @@ class ElasticsearchService {
     this.indexName = 'documents';
   }
 
-  async indexDocument(file) {
+  async indexDocument(file, body) {
     try {
       const content = await TextExtractor.extractText(file);
       
@@ -15,7 +15,10 @@ class ElasticsearchService {
         content: content,
         size: file.size,
         uploadDate: new Date(),
-        mimetype: file.mimetype
+        mimetype: file.mimetype,
+        storeId: body.storeId,
+        type: body.type,
+        format: body.extension
       };
 
       const response = await elasticClient.index({
@@ -36,8 +39,14 @@ class ElasticsearchService {
         index: this.indexName,
         body: {
           query: {
-            match: {
-              content: query
+            bool: {
+              must: [
+                  {match: {"content" : query.keyword}},
+                ],
+                filter: [
+                  query.type && {match: {"type" : query.type}},
+                  query.format && {match: {"format" : query.format}},
+              ]
             }
           }
         }
